@@ -10,8 +10,8 @@ export default function Footer({ t }) {
       <div>
         <h4>{t.contact}</h4>
         <p>{t.address1}</p>
-        <p>+355 69 000 0000</p>
-        <p>hello@aneli.al</p>
+        <p>+355 67 206 5389</p>
+        <p>info@aneli.al</p>
       </div>
       <div>
         <h4>Social</h4>

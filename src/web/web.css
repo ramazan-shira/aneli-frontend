@@ -1,7 +1,7 @@
 :root {
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --gold: #e0b94a;
-  --cream: #f4ecd3;
+  --cream: #f9f6ed;
   --deep: #11150a;
 }
 h1 {
@@ -1286,7 +1286,6 @@ html.ready .fade {
   margin: 0;
 }
 
-/* ---- fixes: no horizontal scroll, marquee wrapper, 2-stat strip, mobile hero ---- */
 html,
 body {
   overflow-x: clip;

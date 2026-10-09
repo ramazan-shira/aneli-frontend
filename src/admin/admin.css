@@ -313,7 +313,7 @@ label {
 .chart table {
   display: table;
 }
-/* fixed sidebar: always visible, scrolls independently only if the screen is very short */
+
 .side {
   position: sticky;
   top: 0;
@@ -366,7 +366,6 @@ label {
   }
 }
 
-/* login: split screen */
 .auth {
   display: grid;
   grid-template-columns: minmax(380px, 1fr) 1.25fr;
