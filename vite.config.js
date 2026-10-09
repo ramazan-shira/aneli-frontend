@@ -2,5 +2,5 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
-  server: { proxy: { "/api": "https://aneli-backend.onrender.com" } },
+  server: { proxy: { "/api": "https://api.aneli.al" } },
 });
