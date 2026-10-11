@@ -33,7 +33,7 @@ function Loader() {
   }, []);
   return (
     <div className={`loader ${done ? "done" : ""}`} aria-hidden="true">
-      <img src="/logo.svg" alt="" />
+      <img src="/logoWhite.png" alt="" />
       <b>Anéli</b>
       <div className="bar">
         <i />

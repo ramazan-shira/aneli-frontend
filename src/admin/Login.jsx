@@ -52,7 +52,13 @@ export default function Login({ a, lang, setLang, theme, setTheme }) {
           </button>
         </div>
         <form className="auth-card" onSubmit={go}>
-          <img src="/logo.svg" width="60" alt="" className="auth-logo" />
+          <img
+            src={theme === "dark" ? "/logoWhite.png" : "/logoBlack.png"}
+            width="60"
+            alt=""
+            className="auth-logo"
+          />
+
           <h1>{a.welcome}</h1>
           <p className="muted">{a.loginSub}</p>
           <label className="fld">
