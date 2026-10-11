@@ -9,6 +9,7 @@ import Contact from "./Contact.jsx";
 import Footer from "./Footer.jsx";
 import useSiteEffects from "./effects.js";
 import "./web.css";
+import "./gallery.css";
 
 function Loader() {
   const [done, setDone] = useState(!!sessionStorage.getItem("aneli_seen"));
@@ -52,7 +53,7 @@ export default function Web(props) {
       <main>
         <Hero t={t} />
         <About t={t} />
-        <Gallery t={t} />
+        <Gallery t={t} lang={props.lang} />
         <Products t={t} />
         <Reviews t={t} />
         <Contact t={t} />
