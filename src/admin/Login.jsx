@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api.js";
 import { gallery } from "../web/art.js";
 import { Mail, Lock, Check } from "./Icons.jsx";
+import "./login.css";
 const dust = Array.from({ length: 14 }, (_, i) => ({
   "--x": `${(i * 37 + 8) % 100}%`,
   "--s": `${3 + ((i * 5) % 5)}px`,

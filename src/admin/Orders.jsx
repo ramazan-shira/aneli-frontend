@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { api, money } from "../api.js";
 import Modal from "./Modal.jsx";
 import Confirm from "./Confirm.jsx";
-import { Trash } from "./Icons.jsx";
+import PageHead from "./PageHead.jsx";
+import { Trash, Plus, Search } from "./Icons.jsx";
 import { day } from "./Charts.jsx";
 const STATUSES = [
   "ordered",
@@ -12,12 +13,13 @@ const STATUSES = [
 ];
 
 export default function Orders({ t, a }) {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(null);
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState(null);
   const [rm, setRm] = useState(null);
   const [err, setErr] = useState("");
   const [filter, setFilter] = useState("");
+  const [q, setQ] = useState("");
   const load = () => api("/orders", { admin: true }).then(setOrders);
   useEffect(() => {
     load();
@@ -36,20 +38,21 @@ export default function Orders({ t, a }) {
     setRm(null);
     load();
   };
-  const qty = (id, d) =>
-    setErr("") ||
+  const qty = (id, d) => {
+    setErr("");
     setForm((f) => ({
       ...f,
       cart: { ...f.cart, [id]: Math.max(0, (f.cart[id] || 0) + d) },
     }));
+  };
   const total = form
     ? products.reduce((s, p) => s + p.price * (form.cart[p._id] || 0), 0)
     : 0;
   const save = async (e) => {
     e.preventDefault();
     const items = Object.entries(form.cart)
-      .filter(([, q]) => q > 0)
-      .map(([product, q]) => ({ product, qty: q }));
+      .filter(([, n]) => n > 0)
+      .map(([product, n]) => ({ product, qty: n }));
     if (!items.length) return setErr(a.pickItems);
     await api("/orders/manual", {
       method: "POST",
@@ -64,10 +67,33 @@ export default function Orders({ t, a }) {
     setForm(null);
     load();
   };
-  const shown = filter ? orders.filter((o) => o.status === filter) : orders;
+  const needle = q.trim().toLowerCase();
+  const shown = (orders || []).filter(
+    (o) =>
+      (!filter || o.status === filter) &&
+      (!needle ||
+        `${o.customerName} ${o.phone || ""}`.toLowerCase().includes(needle)),
+  );
+  const empty =
+    orders && !shown.length ? (orders.length ? a.noMatches : a.noOrders) : null;
+  const Status = ({ o }) => (
+    <select
+      className="sel-s"
+      data-s={o.status}
+      value={o.status}
+      aria-label={a.status}
+      onChange={(e) => setStatus(o, e.target.value)}
+    >
+      {STATUSES.map((s) => (
+        <option key={s} value={s}>
+          {t[s]}
+        </option>
+      ))}
+    </select>
+  );
   return (
     <>
-      <div className="row filters">
+      <PageHead title={a.orders} sub={a.ordersSub}>
         <button
           className="btn"
           onClick={() => {
@@ -75,9 +101,25 @@ export default function Orders({ t, a }) {
             setForm({ customerName: "", phone: "", address: "", cart: {} });
           }}
         >
-          {a.addOrder}
+          <Plus /> {a.addOrder}
         </button>
-        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+      </PageHead>
+      <div className="toolbar">
+        <div className="searchbox">
+          <Search />
+          <input
+            type="search"
+            placeholder={a.searchOrders}
+            aria-label={a.searchOrders}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        <select
+          value={filter}
+          aria-label={a.status}
+          onChange={(e) => setFilter(e.target.value)}
+        >
           <option value="">{a.allStatuses}</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -86,6 +128,7 @@ export default function Orders({ t, a }) {
           ))}
         </select>
       </div>
+
       {form && (
         <Modal title={a.newOrder} onClose={() => setForm(null)}>
           <form className="form" onSubmit={save}>
@@ -126,11 +169,19 @@ export default function Orders({ t, a }) {
                     <small className="muted">{money(p.price)}</small>
                   </span>
                   <span className="qty">
-                    <button type="button" onClick={() => qty(p._id, -1)}>
+                    <button
+                      type="button"
+                      onClick={() => qty(p._id, -1)}
+                      aria-label="−"
+                    >
                       −
                     </button>
                     {form.cart[p._id] || 0}
-                    <button type="button" onClick={() => qty(p._id, 1)}>
+                    <button
+                      type="button"
+                      onClick={() => qty(p._id, 1)}
+                      aria-label="+"
+                    >
                       +
                     </button>
                   </span>
@@ -142,7 +193,7 @@ export default function Orders({ t, a }) {
                 {err}
               </p>
             )}
-            <div className="row">
+            <div className="row wrapx">
               <b>
                 {a.total}: {money(total)}
               </b>
@@ -169,65 +220,127 @@ export default function Orders({ t, a }) {
           onNo={() => setRm(null)}
         />
       )}
-      <table>
-        <thead>
-          <tr>
-            <th>{a.date}</th>
-            <th>{a.customer}</th>
-            <th>{a.items}</th>
-            <th>{a.total}</th>
-            <th>{a.status}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {shown.map((o) => (
-            <tr key={o._id}>
-              <td>
-                {day(new Date(o.createdAt))}
-                <br />
-                <span className="muted">
-                  {o.source === "phone" ? a.byPhone : a.website}
-                </span>
-              </td>
-              <td>
-                <b>{o.customerName}</b>
-                <br />
-                <span className="muted">{o.phone}</span>
-              </td>
-              <td>{o.items.map((i) => `${i.qty} × ${i.name}`).join(", ")}</td>
-              <td>{money(o.total)}</td>
-              <td>
-                <select
-                  value={o.status}
-                  onChange={(e) => setStatus(o, e.target.value)}
-                >
-                  {STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {t[s]}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td>
-                <button
-                  className="btn sm ghost danger-h"
-                  onClick={() => setRm(o)}
-                >
-                  <Trash /> {a.del}
-                </button>
-              </td>
-            </tr>
-          ))}
-          {!shown.length && (
-            <tr>
-              <td colSpan="6" className="muted">
-                {a.noOrders}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+
+      {empty && <p className="empty">{empty}</p>}
+      {!!shown.length && (
+        <>
+          <div className="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{a.date}</th>
+                  <th>{a.customer}</th>
+                  <th>{a.items}</th>
+                  <th>{a.total}</th>
+                  <th>{a.status}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((o) => (
+                  <tr key={o._id}>
+                    <td className="nowrap">
+                      {day(new Date(o.createdAt))}
+                      <br />
+                      <span className="muted">
+                        {o.source === "phone" ? a.byPhone : a.website}
+                      </span>
+                    </td>
+                    <td>
+                      <b>{o.customerName}</b>
+                      <br />
+                      <span className="muted">{o.phone}</span>
+                    </td>
+                    <td>
+                      <ul className="plain">
+                        {o.items.map((i, n) => (
+                          <li key={n}>
+                            {i.qty} × {i.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td className="nowrap">
+                      <b>{money(o.total)}</b>
+                    </td>
+                    <td>
+                      <Status o={o} />
+                    </td>
+                    <td>
+                      <div className="acts">
+                        <button
+                          className="btn sm ghost danger-h"
+                          onClick={() => setRm(o)}
+                        >
+                          <Trash /> {a.del}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="cards">
+            {shown.map((o) => (
+              <article className="ocard" key={o._id}>
+                <div className="oc-main">
+                  <div className="kv">
+                    <span>{a.date}</span>
+                    <b>
+                      {day(new Date(o.createdAt))}{" "}
+                      <small className="muted">
+                        · {o.source === "phone" ? a.byPhone : a.website}
+                      </small>
+                    </b>
+                  </div>
+                  <div className="kv">
+                    <span>{a.customer}</span>
+                    <b>
+                      {o.customerName}
+                      {o.phone && (
+                        <small className="muted block">{o.phone}</small>
+                      )}
+                    </b>
+                  </div>
+                  <div className="kv">
+                    <span>{a.items}</span>
+                    <div>
+                      <ul className="plain">
+                        {o.items.map((i, n) => (
+                          <li key={n}>
+                            {i.qty} × {i.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="kv">
+                    <span>{a.total}</span>
+                    <b>{money(o.total)}</b>
+                  </div>
+                  <div className="kv">
+                    <span>{a.status}</span>
+                    <div>
+                      <Status o={o} />
+                    </div>
+                  </div>
+                </div>
+                <div className="pc-actions">
+                  <button
+                    className="ibtn danger-h"
+                    onClick={() => setRm(o)}
+                    aria-label={`${a.del}: ${o.customerName}`}
+                    title={a.del}
+                  >
+                    <Trash size={18} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }

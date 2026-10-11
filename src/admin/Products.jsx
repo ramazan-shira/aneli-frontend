@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { api, money } from "../api.js";
 import Modal from "./Modal.jsx";
 import Confirm from "./Confirm.jsx";
-import { Pencil, Trash } from "./Icons.jsx";
+import PageHead from "./PageHead.jsx";
+import { Pencil, Trash, Plus, Search } from "./Icons.jsx";
 const EMPTY = { name: "", description: "", price: "", badge: "", image: "" };
 
 export default function Products({ a }) {
-  const [list, setList] = useState([]);
+  const [list, setList] = useState(null);
   const [edit, setEdit] = useState(null);
   const [rm, setRm] = useState(null);
+  const [q, setQ] = useState("");
   const load = () => api("/products").then(setList);
   useEffect(() => {
     load();
@@ -36,13 +38,31 @@ export default function Products({ a }) {
     load();
   };
   const set = (k) => (e) => setEdit({ ...edit, [k]: e.target.value });
+  const shown = (list || []).filter((p) =>
+    p.name.toLowerCase().includes(q.trim().toLowerCase()),
+  );
+  const empty =
+    list && !shown.length ? (list.length ? a.noMatches : a.noProducts) : null;
   return (
     <>
-      <div>
+      <PageHead title={a.products} sub={a.productsSub}>
         <button className="btn" onClick={() => setEdit({ ...EMPTY })}>
-          {a.addProduct}
+          <Plus /> {a.addProduct}
         </button>
+      </PageHead>
+      <div className="toolbar">
+        <div className="searchbox">
+          <Search />
+          <input
+            type="search"
+            placeholder={a.searchProducts}
+            aria-label={a.searchProducts}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
       </div>
+
       {edit && (
         <Modal
           title={edit._id ? a.editProduct : a.addProduct}
@@ -106,42 +126,94 @@ export default function Products({ a }) {
           onNo={() => setRm(null)}
         />
       )}
-      <table>
-        <thead>
-          <tr>
-            <th></th>
-            <th>{a.name}</th>
-            <th>{a.price}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((p) => (
-            <tr key={p._id}>
-              <td>
-                <img src={p.image} width="48" alt="" />
-              </td>
-              <td>
-                <b>{p.name}</b>
-                <br />
-                <span className="muted">{p.description}</span>
-              </td>
-              <td>{money(p.price)}</td>
-              <td className="acts">
-                <button className="btn sm ghost" onClick={() => setEdit(p)}>
-                  <Pencil /> {a.edit}
-                </button>
-                <button
-                  className="btn sm ghost danger-h"
-                  onClick={() => setRm(p)}
-                >
-                  <Trash /> {a.del}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      {empty && <p className="empty">{empty}</p>}
+      {!!shown.length && (
+        <>
+          <div className="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{a.name}</th>
+                  <th>{a.price}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((p) => (
+                  <tr key={p._id}>
+                    <td>
+                      <div className="pt">
+                        <img src={p.image} alt="" />
+                        <div>
+                          <b>{p.name}</b>
+                          {p.badge && <span className="pill">{p.badge}</span>}
+                          <p className="muted clamp1">{p.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="nowrap">
+                      <b>{money(p.price)}</b>
+                    </td>
+                    <td>
+                      <div className="acts">
+                        <button
+                          className="btn sm ghost"
+                          onClick={() => setEdit(p)}
+                        >
+                          <Pencil /> {a.edit}
+                        </button>
+                        <button
+                          className="btn sm ghost danger-h"
+                          onClick={() => setRm(p)}
+                        >
+                          <Trash /> {a.del}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="cards">
+            {shown.map((p) => (
+              <article className="pcard" key={p._id}>
+                <img src={p.image} alt="" />
+                <div className="pc-body">
+                  <div className="kv">
+                    <span>{a.name}</span>
+                    <b>{p.name}</b>
+                  </div>
+                  <div className="kv">
+                    <span>{a.priceLabel}</span>
+                    <b>{money(p.price)}</b>
+                  </div>
+                  <p className="muted clamp2">{p.description}</p>
+                </div>
+                <div className="pc-actions">
+                  <button
+                    className="ibtn"
+                    onClick={() => setEdit(p)}
+                    aria-label={`${a.edit}: ${p.name}`}
+                    title={a.edit}
+                  >
+                    <Pencil size={18} />
+                  </button>
+                  <button
+                    className="ibtn danger-h"
+                    onClick={() => setRm(p)}
+                    aria-label={`${a.del}: ${p.name}`}
+                    title={a.del}
+                  >
+                    <Trash size={18} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }
